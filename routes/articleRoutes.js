@@ -18,6 +18,6 @@ router.post("/:id/favorite", verifyJWT, articleController.toggleFavorite);
 
 router.delete("/:id", verifyJWT, articleController.deleteArticle);
 
-// router.put("/:slug", verifyJWT, articleController.updateArticle);
+router.put("/:id", verifyJWT, articleController.updateArticle);
 
 module.exports = router;
