@@ -26,14 +26,14 @@ app.use("/test", require("../routes/testRoutes"));
 // user routes - for /api/users and /api/user
 app.use("/api", require("../routes/userRoutes"));
 
-// // user routes - for profiles
-// app.use("/api/profiles", require("../routes/profileRoutes"));
+// user routes - for profiles
+app.use("/api/profiles", require("../routes/profileRoutes"));
 
-// // article routes
+// article routes
 app.use("/api/articles", require("../routes/articleRoutes"));
 
-// // tag route
-// app.use("/api/tags", require("../routes/tagRoutes"));
+// tag route
+app.use("/api/tags", require("../routes/tagRoutes"));
 
 // // comment routes
 app.use("/api/articles", require("../routes/commentRoutes"));
