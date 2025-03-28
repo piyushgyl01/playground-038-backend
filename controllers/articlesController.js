@@ -58,66 +58,109 @@ const deleteArticle = asyncHandler(async (req, res) => {
 });
 
 const updateArticle = asyncHandler(async (req, res) => {
-  const userId = req.userId;
+  const article = await Article.findById(req.params.id);
 
-  const { article } = req.body;
-
-  const { slug } = req.params;
-
-  const loginUser = await User.findById(userId).exec();
-
-  const target = await Article.findOne({ slug }).exec();
-
-  // console.log(target.title);
-  // console.log(req.userId);
-  if (article.title) {
-    target.title = article.title;
-  }
-  if (article.description) {
-    target.description = article.description;
-  }
-  if (article.body) {
-    target.body = article.body;
-  }
-  if (article.tagList) {
-    target.tagList = article.tagList;
+  if (!article) {
+    return res.status(404).json({ message: "Article not found." });
   }
 
-  await target.save();
-  return res.status(200).json({
-    article: await target.toArticleResponse(loginUser),
-  });
+  if (article.author.toString() !== req.user.id) {
+    return res
+      .status(403)
+      .json({ message: "Only the author can edit his article" });
+  }
+
+  try {
+    const updatedArticle = await Article.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+
+    res.json({
+      message: "Article updated successfully",
+      article: updatedArticle,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating article", error: error.message });
+  }
+});
+
+const allArticles = asyncHandler(async (req, res) => {
+  try {
+    const articles = await Article.find().populate(
+      "author",
+      "name username image"
+    );
+    res.json({ articles });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error getting articles", error: error.message });
+  }
+});
+
+const singleArticle = asyncHandler(async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id).populate(
+      "author",
+      "name username image"
+    );
+    res.json({ article });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error getting articles", error: error.message });
+  }
 });
 
 const toggleFavorite = asyncHandler(async (req, res) => {
-  const id = req.userId;
+  try {
+    const article = await Article.findById(req.params.id);
 
-  const { slug } = req.params;
+    if (!article) {
+      return res.status(404).json({ message: "Article not found." });
+    }
 
-  const loginUser = await User.findById(id).exec();
+    const user = await User.findById(req.user.id);
 
-  if (!loginUser) {
-    return res.status(401).json({
-      message: "User Not Found",
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if the article is already favorited
+    const isAlreadyFavorited =
+      user.favouriteArticles && user.favouriteArticles.includes(article._id);
+
+    if (isAlreadyFavorited) {
+      // Remove from favorites
+      user.favouriteArticles = user.favouriteArticles.filter(
+        (articleId) => articleId.toString() !== article._id.toString()
+      );
+      article.favouritesCount = Math.max(0, article.favouritesCount - 1);
+    } else {
+      // Add to favorites
+      if (!user.favouriteArticles) user.favouriteArticles = [];
+      user.favouriteArticles.push(article._id);
+      article.favouritesCount = (article.favouritesCount || 0) + 1;
+    }
+
+    await user.save();
+    await article.save();
+
+    res.json({
+      article: {
+        ...article.toObject(),
+        favorited: !isAlreadyFavorited,
+      },
     });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error toggling favorite", error: error.message });
   }
-
-  const article = await Article.findOne({ slug }).exec();
-
-  if (!article) {
-    return res.status(401).json({
-      message: "Article Not Found",
-    });
-  }
-  // console.log(`article info ${article}`);
-
-  await loginUser.favorite(article._id);
-
-  const updatedArticle = await article.updateFavoriteCount();
-
-  return res.status(200).json({
-    article: await updatedArticle.toArticleResponse(loginUser),
-  });
 });
 
 const getArticleWithSlug = asyncHandler(async (req, res) => {
@@ -247,4 +290,6 @@ module.exports = {
   updateArticle,
   feedArticles,
   listArticles,
+  allArticles,
+  singleArticle,
 };

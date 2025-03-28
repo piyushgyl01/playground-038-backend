@@ -6,15 +6,15 @@ const articleController = require("../controllers/articlesController");
 // // feed endpoint must go before :slug endpoint
 // router.get("/feed", verifyJWT, articleController.feedArticles);
 
-// router.get("/", verifyJWTOptional, articleController.listArticles);
+router.get("/", articleController.allArticles);
 
-// router.get("/:slug", articleController.getArticleWithSlug);
+router.get("/:id", articleController.singleArticle);
 
 router.post("/", verifyJWT, articleController.createArticle);
 
 // router.delete("/:slug", verifyJWT, articleController.deleteArticle);
 
-// router.post("/:slug/favorite", verifyJWT, articleController.favoriteArticle);
+router.post("/:id/favorite", verifyJWT, articleController.toggleFavorite);
 
 router.delete("/:id", verifyJWT, articleController.deleteArticle);
 

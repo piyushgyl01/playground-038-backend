@@ -1,25 +1,20 @@
-// const express = require("express");
-// const router = express.Router();
-// const verifyJWT = require("../middleware/verifyJWT");
-// const verifyJWTOptional = require("../middleware/verifyJWTOptional");
-// const commentController = require("../controllers/commentsController");
+const express = require("express");
+const router = express.Router();
+const { verifyJWT } = require("../middleware/verifyJWT");
+const { verifyJWTOptional } = require("../middleware/verifyJWTOptional");
+const commentController = require("../controllers/commentsController");
 
-// router.post(
-//   "/:slug/comments",
-//   verifyJWT,
-//   commentController.addCommentsToArticle
-// );
+// Add a comment to an article
+router.post("/:id/comments", verifyJWT, commentController.addCommentsToArticle);
 
-// router.get(
-//   "/:slug/comments",
-//   verifyJWTOptional,
-//   commentController.getCommentsFromArticle
-// );
+// Get comments for an article
+router.get("/:id/comments", commentController.getCommentsFromArticle);
 
-// router.delete(
-//   "/:slug/comments/:id",
-//   verifyJWT,
-//   commentController.deleteComment
-// );
+// Delete a comment
+router.delete(
+  "/:id/comments/:commentId",
+  verifyJWT,
+  commentController.deleteComment
+);
 
-// module.exports = router;
+module.exports = router;
