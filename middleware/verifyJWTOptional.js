@@ -1,27 +1,27 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
-const verifyJWT = (req, res, next) => {
-    const authHeader = req.headers.authorization || req.headers.Authorization
+const JWT_SECRET = process.env.JWT_SECRET;
 
-    if (!authHeader?.startsWith('Token ')) {
-        return res.status(401).json({ message: 'Unauthorized' })
-    }
+function verifyJWTOptional(req, res, next) {
+  const accessToken = req.cookies.access_token;
 
-    const token = authHeader.split(' ')[1];
+  if (!accessToken) {
+    // No token provided, but that's fine - just mark user as not authenticated
+    req.user = null;
+    next();
+    return;
+  }
 
-    jwt.verify(
-        token,
-        process.env.ACCESS_TOKEN_SECRET,
-        (err, decoded) => {
-            if (err) {
-                return res.status(403).json({ message: 'Forbidden' });
-            }
-            req.userId = decoded.user.id;
-            req.userEmail = decoded.user.email;
-            req.userHashedPwd = decoded.user.password;
-            next();
-        }
-    )
-};
+  try {
+    const decoded = jwt.verify(accessToken, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    // Token invalid, but that's ok for optional authentication
+    req.user = null;
+    next();
+  }
+}
 
-module.exports = verifyJWT;
+module.exports = { verifyJWTOptional };

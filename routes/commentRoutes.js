@@ -8,7 +8,7 @@ const commentController = require("../controllers/commentsController");
 router.post("/:id/comments", verifyJWT, commentController.addCommentsToArticle);
 
 // Get comments for an article
-router.get("/:id/comments", commentController.getCommentsFromArticle);
+router.get("/:id/comments", verifyJWTOptional, commentController.getCommentsFromArticle);
 
 // Delete a comment
 router.delete(
