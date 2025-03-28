@@ -1,8 +1,12 @@
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const { generateTokens } = require("../middleware/generateTokens");
 const { setAuthCookies } = require("../middleware/setAuthCookies");
+const { clearAuthCookies } = require("../middleware/clearAuthCookies");
+
+require("dotenv").config()
 
 // @desc registration for a user
 // @route POST /api/users
@@ -148,38 +152,61 @@ const userLogin = asyncHandler(async (req, res) => {
 // @access Private
 // @return User
 const updateUser = asyncHandler(async (req, res) => {
-  const { user } = req.body;
+  const id = req.user.id;
+
+  const user = await User.findById(id);
 
   // confirm data
   if (!user) {
     return res.status(400).json({ message: "Required a User object" });
   }
 
-  const email = req.userEmail;
+  try {
+    const updatedUser = await User.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
 
-  const target = await User.findOne({ email }).exec();
+    res.json({ user: updatedUser });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating user", error: error.message });
+  }
+});
 
-  if (user.email) {
-    target.email = user.email;
-  }
-  if (user.username) {
-    target.username = user.username;
-  }
-  if (user.password) {
-    const hashedPwd = await bcrypt.hash(user.password, 10);
-    target.password = hashedPwd;
-  }
-  if (typeof user.image !== "undefined") {
-    target.image = user.image;
-  }
-  if (typeof user.bio !== "undefined") {
-    target.bio = user.bio;
-  }
-  await target.save();
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-  return res.status(200).json({
-    user: target.toUserResponse(),
-  });
+
+const refreshToken = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.refresh_token;
+  console.log(refreshToken);
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "No refresh token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const tokens = generateTokens(user);
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+    res.status(200).json({ message: "Token refreshed successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Invalid refresh token", error: error.message });
+  }
+});
+
+const logout = asyncHandler(async (req, res) => {
+  clearAuthCookies(res);
+  res.status(200).json({ message: "Logged out successfully" });
 });
 
 module.exports = {
@@ -187,4 +214,6 @@ module.exports = {
   getCurrentUser,
   userLogin,
   updateUser,
+  refreshToken,
+  logout,
 };

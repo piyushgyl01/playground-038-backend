@@ -3,30 +3,34 @@ const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 
 const createArticle = asyncHandler(async (req, res) => {
-  const id = req.userId;
-
-  const author = await User.findById(id).exec();
-
-  const { title, description, body, tagList } = req.body.article;
+  const { title, description, body, tagList } = req.body;
 
   // confirm data
   if (!title || !description || !body) {
     res.status(400).json({ message: "All fields are required" });
   }
 
-  const article = await Article.create({ title, description, body });
+  const id = req.user.id;
 
-  article.author = id;
+  try {
+    const newArticle = new Article({
+      title,
+      description,
+      body,
+      tagList,
+      author: id,
+    });
 
-  if (Array.isArray(tagList) && tagList.length > 0) {
-    article.tagList = tagList;
+    const savedAricle = await newArticle.save();
+
+    res
+      .status(201)
+      .json({ message: "Article created successfully", article: savedAricle });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error creating article", error: error.message });
   }
-
-  await article.save();
-
-  return await res.status(200).json({
-    article: await article.toArticleResponse(author),
-  });
 });
 
 const deleteArticle = asyncHandler(async (req, res) => {

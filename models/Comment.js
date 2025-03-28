@@ -9,11 +9,11 @@ const commentSchema = new mongoose.Schema(
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "pg36User",
+      ref: "pg38User",
     },
     article: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "pg36Article",
+      ref: "pg38Article",
     },
   },
   {
@@ -21,15 +21,15 @@ const commentSchema = new mongoose.Schema(
   }
 );
 
-commentSchema.methods.toCommentResponse = async function (user) {
-  const authorObj = await User.findById(this.author).exec();
-  return {
-    id: this._id,
-    body: this.body,
-    createdAt: this.createdAt,
-    updatedAt: this.updatedAt,
-    author: authorObj.toProfileJSON(user),
-  };
-};
+// commentSchema.methods.toCommentResponse = async function (user) {
+//   const authorObj = await User.findById(this.author).exec();
+//   return {
+//     id: this._id,
+//     body: this.body,
+//     createdAt: this.createdAt,
+//     updatedAt: this.updatedAt,
+//     author: authorObj.toProfileJSON(user),
+//   };
+// };
 
-module.exports = mongoose.model("pg36Comment", commentSchema);
+module.exports = mongoose.model("pg38Comment", commentSchema);

@@ -14,3 +14,5 @@ function clearAuthCookies(res) {
     maxAge: 0,
   });
 }
+
+module.exports = {clearAuthCookies}

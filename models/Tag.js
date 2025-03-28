@@ -10,11 +10,11 @@ const tagSchema = new mongoose.Schema({
   articles: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "pg36Article",
+      ref: "pg38Article",
     },
   ],
 });
 
 tagSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model("pg36Tag", tagSchema);
+module.exports = mongoose.model("pg38Tag", tagSchema);
