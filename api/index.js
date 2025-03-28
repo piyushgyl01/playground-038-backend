@@ -30,7 +30,7 @@ app.use("/api", require("../routes/userRoutes"));
 // app.use("/api/profiles", require("../routes/profileRoutes"));
 
 // // article routes
-// app.use("/api/articles", require("../routes/articleRoutes"));
+app.use("/api/articles", require("../routes/articleRoutes"));
 
 // // tag route
 // app.use("/api/tags", require("../routes/tagRoutes"));

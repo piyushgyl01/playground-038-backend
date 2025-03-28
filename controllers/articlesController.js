@@ -7,7 +7,7 @@ const createArticle = asyncHandler(async (req, res) => {
 
   // confirm data
   if (!title || !description || !body) {
-    res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "All fields are required" });
   }
 
   const id = req.user.id;
@@ -34,117 +34,27 @@ const createArticle = asyncHandler(async (req, res) => {
 });
 
 const deleteArticle = asyncHandler(async (req, res) => {
-  const id = req.userId;
+  try {
+    const article = await Article.findById(req.params.id);
 
-  const { slug } = req.params;
+    if (!article) {
+      return res.status(404).json({ message: "Article not found." });
+    }
 
-  // console.log(id);
+    if (article.author.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Only the author can delete his article" });
+    }
 
-  const loginUser = await User.findById(id).exec();
+    await Article.findByIdAndDelete(req.params.id);
 
-  if (!loginUser) {
-    return res.status(401).json({
-      message: "User Not Found",
-    });
+    res.json({ message: "Article deleted successfully", article: article });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting article", error: error.message });
   }
-
-  const article = await Article.findOne({ slug }).exec();
-
-  if (!article) {
-    return res.status(401).json({
-      message: "Article Not Found",
-    });
-  }
-  // console.log(`article author is ${article.author}`)
-  // console.log(`login user id is ${loginUser}`)
-
-  if (article.author.toString() === loginUser._id.toString()) {
-    await Article.deleteOne({ slug: slug });
-    res.status(200).json({
-      message: "Article successfully deleted!!!",
-    });
-  } else {
-    res.status(403).json({
-      message: "Only the author can delete his article",
-    });
-  }
-});
-
-const favoriteArticle = asyncHandler(async (req, res) => {
-  const id = req.userId;
-
-  const { slug } = req.params;
-
-  const loginUser = await User.findById(id).exec();
-
-  if (!loginUser) {
-    return res.status(401).json({
-      message: "User Not Found",
-    });
-  }
-
-  const article = await Article.findOne({ slug }).exec();
-
-  if (!article) {
-    return res.status(401).json({
-      message: "Article Not Found",
-    });
-  }
-  // console.log(`article info ${article}`);
-
-  await loginUser.favorite(article._id);
-
-  const updatedArticle = await article.updateFavoriteCount();
-
-  return res.status(200).json({
-    article: await updatedArticle.toArticleResponse(loginUser),
-  });
-});
-
-const unfavoriteArticle = asyncHandler(async (req, res) => {
-  const id = req.userId;
-
-  const { slug } = req.params;
-
-  const loginUser = await User.findById(id).exec();
-
-  if (!loginUser) {
-    return res.status(401).json({
-      message: "User Not Found",
-    });
-  }
-
-  const article = await Article.findOne({ slug }).exec();
-
-  if (!article) {
-    return res.status(401).json({
-      message: "Article Not Found",
-    });
-  }
-
-  await loginUser.unfavorite(article._id);
-
-  await article.updateFavoriteCount();
-
-  return res.status(200).json({
-    article: await article.toArticleResponse(loginUser),
-  });
-});
-
-const getArticleWithSlug = asyncHandler(async (req, res) => {
-  const { slug } = req.params;
-
-  const article = await Article.findOne({ slug }).exec();
-
-  if (!article) {
-    return res.status(401).json({
-      message: "Article Not Found",
-    });
-  }
-
-  return res.status(200).json({
-    article: await article.toArticleResponse(false),
-  });
 });
 
 const updateArticle = asyncHandler(async (req, res) => {
@@ -176,6 +86,53 @@ const updateArticle = asyncHandler(async (req, res) => {
   await target.save();
   return res.status(200).json({
     article: await target.toArticleResponse(loginUser),
+  });
+});
+
+const toggleFavorite = asyncHandler(async (req, res) => {
+  const id = req.userId;
+
+  const { slug } = req.params;
+
+  const loginUser = await User.findById(id).exec();
+
+  if (!loginUser) {
+    return res.status(401).json({
+      message: "User Not Found",
+    });
+  }
+
+  const article = await Article.findOne({ slug }).exec();
+
+  if (!article) {
+    return res.status(401).json({
+      message: "Article Not Found",
+    });
+  }
+  // console.log(`article info ${article}`);
+
+  await loginUser.favorite(article._id);
+
+  const updatedArticle = await article.updateFavoriteCount();
+
+  return res.status(200).json({
+    article: await updatedArticle.toArticleResponse(loginUser),
+  });
+});
+
+const getArticleWithSlug = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+
+  const article = await Article.findOne({ slug }).exec();
+
+  if (!article) {
+    return res.status(401).json({
+      message: "Article Not Found",
+    });
+  }
+
+  return res.status(200).json({
+    article: await article.toArticleResponse(false),
   });
 });
 
@@ -285,8 +242,7 @@ const listArticles = asyncHandler(async (req, res) => {
 module.exports = {
   createArticle,
   deleteArticle,
-  favoriteArticle,
-  unfavoriteArticle,
+  toggleFavorite,
   getArticleWithSlug,
   updateArticle,
   feedArticles,
