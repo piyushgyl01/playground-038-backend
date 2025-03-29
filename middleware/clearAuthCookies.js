@@ -10,7 +10,7 @@ function clearAuthCookies(res) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: "/auth/refresh-token",
+    path: "/api/user/refresh-token",
     maxAge: 0,
   });
 }

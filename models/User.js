@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 const jwt = require("jsonwebtoken");
@@ -53,90 +54,65 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// userSchema.plugin(uniqueValidator);
+userSchema.plugin(uniqueValidator);
 
-// // @desc generate access token for a user
-// // @required valid email and password
-// userSchema.methods.generateAccessToken = function () {
-//   const accessToken = jwt.sign(
-//     {
-//       user: {
-//         id: this._id,
-//         email: this.email,
-//         password: this.password,
-//       },
-//     },
-//     process.env.ACCESS_TOKEN_SECRET,
-//     { expiresIn: "1d" }
-//   );
-//   return accessToken;
-// };
+// CRITICAL: Uncommented these methods that are used by Article.js
+userSchema.methods.toProfileJSON = function (user) {
+  return {
+    username: this.username,
+    bio: this.bio || "",
+    image: this.image,
+    following: user ? user.isFollowing(this._id) : false,
+  };
+};
 
-// userSchema.methods.toUserResponse = function () {
-//   return {
-//     username: this.username,
-//     email: this.email,
-//     bio: this.bio,
-//     image: this.image,
-//     token: this.generateAccessToken(),
-//   };
-// };
+userSchema.methods.isFollowing = function (id) {
+  const idStr = id.toString();
+  for (const followingUser of this.followingUsers) {
+    if (followingUser.toString() === idStr) {
+      return true;
+    }
+  }
+  return false;
+};
 
-// userSchema.methods.toProfileJSON = function (user) {
-//   return {
-//     username: this.username,
-//     bio: this.bio,
-//     image: this.image,
-//     following: user ? user.isFollowing(this._id) : false,
-//   };
-// };
+userSchema.methods.isFavourite = function (id) {
+  const idStr = id.toString();
+  for (const article of this.favouriteArticles) {
+    if (article.toString() === idStr) {
+      return true;
+    }
+  }
+  return false;
+};
 
-// userSchema.methods.isFollowing = function (id) {
-//   const idStr = id.toString();
-//   for (const followingUser of this.followingUsers) {
-//     if (followingUser.toString() === idStr) {
-//       return true;
-//     }
-//   }
-//   return false;
-// };
+// Other utility methods that might be needed
+userSchema.methods.follow = function (id) {
+  if (this.followingUsers.indexOf(id) === -1) {
+    this.followingUsers.push(id);
+  }
+  return this.save();
+};
 
-// userSchema.methods.follow = function (id) {
-//   if (this.followingUsers.indexOf(id) === -1) {
-//     this.followingUsers.push(id);
-//   }
-//   return this.save();
-// };
+userSchema.methods.unfollow = function (id) {
+  if (this.followingUsers.indexOf(id) !== -1) {
+    this.followingUsers.remove(id);
+  }
+  return this.save();
+};
 
-// userSchema.methods.unfollow = function (id) {
-//   if (this.followingUsers.indexOf(id) !== -1) {
-//     this.followingUsers.remove(id);
-//   }
-//   return this.save();
-// };
+userSchema.methods.favourite = function (id) {
+  if (this.favouriteArticles.indexOf(id) === -1) {
+    this.favouriteArticles.push(id);
+  }
+  return this.save();
+};
 
-// userSchema.methods.isFavourite = function (id) {
-//   const idStr = id.toString();
-//   for (const article of this.favouriteArticles) {
-//     if (article.toString() === idStr) {
-//       return true;
-//     }
-//   }
-//   return false;
-// };
-
-// userSchema.methods.favourite = function (id) {
-//   if (this.favouriteArticles.indexOf(id) === -1) {
-//     this.favouriteArticles.push(id);
-//   }
-//   return this.save();
-// };
-
-// userSchema.methods.unfavourite = function (id) {
-//   if (this.favouriteArticles.indexOf(id) !== -1) {
-//     this.favouriteArticles.remove(id);
-//   }
-//   return this.save();
-// };
+userSchema.methods.unfavourite = function (id) {
+  if (this.favouriteArticles.indexOf(id) !== -1) {
+    this.favouriteArticles.remove(id);
+  }
+  return this.save();
+};
 
 module.exports = mongoose.model("pg38User", userSchema);
