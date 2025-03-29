@@ -1,5 +1,5 @@
 const allowedOrigins = [
-  "https://playground-038-frontend.vercel.app/",
+  "https://playground-038-frontend.vercel.app",
   "http://localhost:5173",
 ];
 
